@@ -1,1 +1,3 @@
-Git will not save empty directories, so this file is a placeholder to create the directory structure until the directory has contents.
+06/10/2022 18:15:26 FEED MONEY: $3 $3
+06/10/2022 18:15:28 Triplemint D4: $0.75 $2.25
+06/10/2022 18:15:28 GIVE CHANGE: $2.25 $0
