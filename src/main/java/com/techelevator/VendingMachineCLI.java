@@ -51,6 +51,8 @@ public class VendingMachineCLI {
 			} else if (choice.equals(MAIN_MENU_OPTIONS[1])) {
 				purchase.purchaseOptions();
 			} else {
+				System.out.println();
+				System.out.println("Thanks for visiting our vending machine!");
 				userChoice = false;
 			}
 		}

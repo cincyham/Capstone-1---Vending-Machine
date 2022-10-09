@@ -18,6 +18,13 @@ public class Purchase {
     private int numOfTimesLogged = 0;
     private Map<String, Item> itemMap = new TreeMap<>();
 
+    public BigDecimal getMoneyFed() {
+        return moneyFed;
+    }
+
+    public BigDecimal getTotalMoneyMade() {
+        return totalMoneyMade;
+    }
 
     //constructor
     public Purchase(){
@@ -49,10 +56,12 @@ public class Purchase {
                 System.out.println();
                 Scanner userInput = new Scanner(System.in);
                 System.out.print("Please feed Money >>> ");
-                BigDecimal userInputBigDecimal = new BigDecimal(String.valueOf(userInput.nextLine()));
-                feedMoney(userInputBigDecimal);
+                String userNumber = userInput.nextLine().trim();
+                if(!userNumber.isEmpty()) {
+                    feedMoney(userNumber);
+                }
             } else if (choice.equals(PURCHASE_OPTIONS[1])) {
-                selectProduct();
+                System.out.println(selectProduct());
             } else {
                 System.out.println();
                 userChoice = false;
@@ -154,19 +163,19 @@ public class Purchase {
                 BigDecimal coin;
                 String coinName;
 
-                if (i == 0){
+                if (i == 0 && decimalNumber.divide(QUARTER,0, RoundingMode.FLOOR).signum() > 0){
 
                     coinName = "Quarter";
                     coin = new BigDecimal("0.25");
 
                 }
-                else if (i == 1){
+                else if (i == 1 && decimalNumber.divide(DIME,0, RoundingMode.FLOOR).signum() > 0){
 
                     coinName = "Dime";
                     coin = new BigDecimal("0.10");
 
                 }
-                else if(i == 2) {
+                else if(i == 2 && decimalNumber.divide(NICKLE,0, RoundingMode.FLOOR).signum() > 0) {
 
                     coinName = "Nickel";
                     coin = new BigDecimal("0.05");
@@ -191,7 +200,7 @@ public class Purchase {
     // Selecting the Product to buy
 
 
-    public void selectProduct() {
+    public String selectProduct() {
 
         // Getting user Input and their product choice
 
@@ -206,21 +215,26 @@ public class Purchase {
         System.out.println();
 
 
-        productSelectionPurchase(productSlot);
+        return productSelectionPurchase(productSlot);
     }
 
 
     //First option of second menu: Feeding money into the machine
 
 
-    public void feedMoney(BigDecimal userInput) {
+    public void feedMoney(String userInput) {
 
-        if (userInput.signum() > 0){
-            moneyFed = moneyFed.add(userInput);
-            logChanges(userInput, "FEED MONEY");
-        } else {
-            System.out.println();
-            System.out.println("Error. Amount must be greater than zero.");
+        try {
+
+            BigDecimal userNumber = new BigDecimal(userInput);
+            if (userNumber.signum() > 0 && userNumber.remainder(new BigDecimal("0.05")).compareTo(BigDecimal.ZERO) == 0) {
+                moneyFed = moneyFed.add(userNumber);
+                logChanges(userNumber, "FEED MONEY");
+            } else {
+                System.out.println("Error. Amount must be greater than zero and a multiple of 5 cents.");
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Please enter a number");
         }
 
     }
@@ -228,46 +242,50 @@ public class Purchase {
 
     //  Purchasing selected product
 
-    private void productSelectionPurchase(String productSlot){
+    public String productSelectionPurchase(String productSlot){
 
-        String lowerCaseProductSlot = productSlot.substring(0, 1).toLowerCase() + productSlot.substring(1);
+        String returnString = "";
 
-        if (productSlot != null && itemMap.containsKey(lowerCaseProductSlot)) {
+        if (productSlot != null && productSlot.length() > 0) {
 
-            //Getting Key Value pair Object as a variable
+            String lowerCaseProductSlot = productSlot.trim().substring(0,1).toLowerCase() + productSlot.trim().substring(1);
+            if(itemMap.containsKey(lowerCaseProductSlot)) {
+                //Getting Key Value pair Object as a variable
 
-            Item item = itemMap.get(lowerCaseProductSlot);
+                Item item = itemMap.get(lowerCaseProductSlot);
 
-            //Getting Variables for the checks
+                //Getting Variables for the checks
 
-            boolean getQuantity = item.getQuantity() > 0;
-            boolean getPriceToMoneyFed = item.getPrice().compareTo(moneyFed) <= 0;
+                boolean getQuantity = item.getQuantity() > 0;
+                boolean getPriceToMoneyFed = item.getPrice().compareTo(moneyFed) <= 0;
 
-            if (getQuantity && getPriceToMoneyFed) {
+                if (getQuantity && getPriceToMoneyFed) {
 
-                // Money actions associated with purchase
+                    // Money actions associated with purchase
 
-                moneyFed = moneyFed.subtract(item.getPrice());
-                totalMoneyMade = totalMoneyMade.add(item.getPrice());
+                    moneyFed = moneyFed.subtract(item.getPrice());
+                    totalMoneyMade = totalMoneyMade.add(item.getPrice());
 
-                // Return item message and minus quantity of item
+                    // Return item message and minus quantity of item
 
-                item.minusQuantity();
-                System.out.printf("%s $%s: %s\n",item.getName(), item.getPrice(), item.getMessage());
+                    item.minusQuantity();
+                    returnString += String.format("%s $%s: %s", item.getName(), item.getPrice(), item.getMessage());
 
-                // Log
+                    // Log
 
-                logChanges(item.getPrice(), (item.getName() + " " + item.getItemSlot()));
+                    logChanges(item.getPrice(), (item.getName() + " " + item.getItemSlot()));
+                    return returnString;
+                } else {
 
+                    String quantityErrorOutput = "Product not available. Not enough stock.";
+                    String moneyErrorOutput = "Error. Not enough Money.";
+                    return (!getQuantity ? quantityErrorOutput : moneyErrorOutput);
+                }
             } else {
-
-                String quantityErrorOutput = "Product not available. Not enough stock.";
-                String moneyErrorOutput = "Error. Not enough Money.";
-                System.out.println(!getQuantity ? quantityErrorOutput : moneyErrorOutput);
+                return "Product slot does not exist.";
             }
         } else {
-
-            System.out.println("Product Slot does not exist.");
+            return "Please enter a slot.";
         }
     }
 
@@ -275,7 +293,7 @@ public class Purchase {
     // Logging changes
 
 
-    public void logChanges(BigDecimal money, String typeOfChange) {
+    private void logChanges(BigDecimal money, String typeOfChange) {
 
         // Creating the File Object
 
@@ -295,7 +313,7 @@ public class Purchase {
 
                 BigDecimal newMoneyFed = new BigDecimal(0);
                 writer.printf("%s %s: $%.2f $%.2f\n", date, typeOfChange, money, newMoneyFed);
-            } else {
+            } else /*if (typeOfChange.equals("FEED MONEY"))*/{
                 writer.printf("%s %s: $%.2f $%.2f\n", date, typeOfChange, money, moneyFed);
             }
         } catch (FileNotFoundException e) {
