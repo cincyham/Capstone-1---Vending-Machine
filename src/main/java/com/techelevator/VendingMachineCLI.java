@@ -3,13 +3,6 @@ package com.techelevator;
 import com.techelevator.view.Menu;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.PrintWriter;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.text.*;
-import java.util.*;
 
 public class VendingMachineCLI {
 
@@ -53,9 +46,10 @@ public class VendingMachineCLI {
 			String choice = (String) menu.getChoiceFromOptions(MAIN_MENU_OPTIONS);
 
 			if (choice.equals(MAIN_MENU_OPTIONS[0])) {
-				purchase.printItemMap();
+				System.out.println();
+				System.out.println(purchase.getItemMap());
 			} else if (choice.equals(MAIN_MENU_OPTIONS[1])) {
-				purchase.purchase();
+				purchase.purchaseOptions();
 			} else {
 				userChoice = false;
 			}

@@ -9,10 +9,7 @@ import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.TreeMap;
+import java.util.*;
 
 public class Purchase {
 
@@ -31,7 +28,7 @@ public class Purchase {
 
     //second option of main menu
 
-    public void purchase() {
+    public void purchaseOptions() {
 
         //Menu
 
@@ -49,16 +46,18 @@ public class Purchase {
             String choice = (String) purchaseMenu.getChoiceFromOptions(PURCHASE_OPTIONS);
 
             if (choice.equals(PURCHASE_OPTIONS[0])) {
-                feedMoney();
+                System.out.println();
+                Scanner userInput = new Scanner(System.in);
+                System.out.print("Please feed Money >>> ");
+                BigDecimal userInputBigDecimal = new BigDecimal(String.valueOf(userInput.nextLine()));
+                feedMoney(userInputBigDecimal);
             } else if (choice.equals(PURCHASE_OPTIONS[1])) {
                 selectProduct();
             } else {
+                System.out.println();
                 userChoice = false;
                 logChanges(this.moneyFed, "GIVE CHANGE");
-
-                //takes away the decimals
-
-                returnMoney();
+                System.out.println(returnMoney());
 
             }
         }
@@ -68,7 +67,7 @@ public class Purchase {
     // Creating a map of the item slots and their object values
 
 
-    public void createMapOfItems(File file) {
+    public boolean createMapOfItems(File file) {
 
         if (file.exists()) {
 
@@ -78,6 +77,7 @@ public class Purchase {
 
                     String line = useFile.nextLine();
                     String[] array = line.split("\\|");
+
 
                     if (array[3].equals("Chip")) {
 
@@ -94,39 +94,49 @@ public class Purchase {
                     } else if (array[3].equals("Gum")) {
 
                         itemMap.put(array[0].toLowerCase(), new Gum(array[0], array[1], new BigDecimal(array[2]), array[3], 5));
-
                     } else {
-                        System.out.println("Type not found.");
+                        System.out.println(array[0] + " Type not found.");
                     }
                 }
             } catch (FileNotFoundException e) {
                 System.out.println(e.getMessage());
             }
+        } else {
+            System.out.println("Something went wrong with the file");
+        }
+        if (!itemMap.isEmpty()) {
+            return true;
+        } else {
+            return false;
         }
     }
 
 
     // Get the list of all Products
 
-    public void printItemMap() {
+    public String getItemMap() {
+
+        String returnString = "";
         for(Map.Entry<String, Item> item : itemMap.entrySet()){
-            System.out.println(item.getValue().toString());
+            returnString += item.getValue().toString() + "\n";
         }
+        return returnString.trim();
     }
 
 
     //Returns change in least amount of coins
 
 
-    private void returnMoney() {
+    public String returnMoney() {
+
+        String returnString = "";
 
         BigDecimal wholeNumber = moneyFed.setScale(0, RoundingMode.FLOOR);
-        System.out.println();
-        System.out.printf("Money returned: $%s\n", this.moneyFed);
-        System.out.println();
+        returnString += String.format("Money returned: $%.2f\n", this.moneyFed);
+        returnString += "\n";
 
         if (wholeNumber.signum() > 0){
-            System.out.printf("Dollar Bills: $%s\n", wholeNumber);
+            returnString += String.format("Dollar Bills: $%.2f\n", wholeNumber);
         }
 
         BigDecimal decimalNumber = (moneyFed.subtract(wholeNumber));
@@ -144,19 +154,19 @@ public class Purchase {
                 BigDecimal coin;
                 String coinName;
 
-                if (i == 0 && decimalNumber.divide(QUARTER).signum() > 0){
+                if (i == 0){
 
                     coinName = "Quarter";
                     coin = new BigDecimal("0.25");
 
                 }
-                else if (i == 1 && decimalNumber.divide(DIME).signum() > 0){
+                else if (i == 1){
 
                     coinName = "Dime";
                     coin = new BigDecimal("0.10");
 
                 }
-                else if(i == 2 && decimalNumber.divide(NICKLE).signum() > 0) {
+                else if(i == 2) {
 
                     coinName = "Nickel";
                     coin = new BigDecimal("0.05");
@@ -164,20 +174,17 @@ public class Purchase {
                 }
                 else {continue;}
 
-
-                //TODO clean this up!!
-                BigDecimal[] array = new BigDecimal[3];
-                array[0] = coin;
-                array[1] = decimalNumber.divide(coin,0, RoundingMode.FLOOR);
-                array[2] = array[1].multiply(coin);
+                BigDecimal numOfCoins = decimalNumber.divide(coin,0, RoundingMode.FLOOR);
+                BigDecimal coinValue = numOfCoins.multiply(coin);
 
 
-                System.out.printf("%s(s): $%s\n", coinName,array[2]);
-                decimalNumber = decimalNumber.subtract(array[2]);
+                returnString += String.format("%s(s): $%.2f\n", coinName,coinValue);
+                decimalNumber = decimalNumber.subtract(coinValue);
 
             }
         }
         this.moneyFed = moneyFed.ZERO;
+        return returnString.trim();
     }
 
 
@@ -189,7 +196,7 @@ public class Purchase {
         // Getting user Input and their product choice
 
         System.out.println();
-        printItemMap();
+        System.out.println(getItemMap());
 
         Scanner userInput = new Scanner(System.in);
         System.out.println();
@@ -206,16 +213,11 @@ public class Purchase {
     //First option of second menu: Feeding money into the machine
 
 
-    public void feedMoney() {
+    public void feedMoney(BigDecimal userInput) {
 
-        System.out.println();
-        Scanner userInput = new Scanner(System.in);
-        System.out.print("Please feed Money >>> ");
-
-        BigDecimal userNumber = new BigDecimal(Double.parseDouble(userInput.nextLine()));
-        if (userNumber.signum() > 0){
-            moneyFed = moneyFed.add(userNumber);
-            logChanges(userNumber, "FEED MONEY");
+        if (userInput.signum() > 0){
+            moneyFed = moneyFed.add(userInput);
+            logChanges(userInput, "FEED MONEY");
         } else {
             System.out.println();
             System.out.println("Error. Amount must be greater than zero.");
@@ -226,13 +228,15 @@ public class Purchase {
 
     //  Purchasing selected product
 
-    private void productSelectionPurchase (String productSlot){
+    private void productSelectionPurchase(String productSlot){
 
-        if (productSlot != null && itemMap.containsKey(productSlot.toLowerCase())) {
+        String lowerCaseProductSlot = productSlot.substring(0, 1).toLowerCase() + productSlot.substring(1);
+
+        if (productSlot != null && itemMap.containsKey(lowerCaseProductSlot)) {
 
             //Getting Key Value pair Object as a variable
 
-            Item item = itemMap.get(productSlot);
+            Item item = itemMap.get(lowerCaseProductSlot);
 
             //Getting Variables for the checks
 

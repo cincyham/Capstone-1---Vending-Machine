@@ -51,7 +51,4 @@ public class Menu {
 		out.flush();
 	}
 
-	public void createMenu(Menu menu) {
-
-	}
 }
